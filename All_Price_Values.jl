@@ -19,26 +19,25 @@ for j in 1:num_of_files
     ssid=j
     areas=readtable(string("./data/daminst-", ssid,"/areas.csv"))                   # list of bidding zones
     periods=readtable(string("./data/daminst-", ssid,"/periods.csv"))               # list of periods considered
-    hourly=readtable(string("./data/daminst-", ssid,"/hourly_quad.csv"))            # classical demand and offer bid curves
     mp_headers=readtable(string("./data/daminst-", ssid,"/mp_headers.csv"))         # MP bids: location, fixed cost, variable cost
 
     ## Genrating random data for the FC column ##
-    nrows_mpHeaders = size(mp_headers, 1)                                                             # Number of rows in mp_headers
+    #nrows_mpHeaders = size(mp_headers, 1)                                                             # Number of rows in mp_headers
     minFC = minimum(mp_headers[3])                                                          # Min value in FC col (lower boundary)
     maxFC = maximum(mp_headers[3])                                                          # Max value in FC col (upper boundary)
-    for k in 1:nrows_mpHeaders
+    for k in 1:size(mp_headers, 1)
         mp_headers[3][k] = rand(minFC:maxFC)
         #print(mp_headers[3][k], " ")
     end
 
     ## Generating random data for PH/QH pairs in mp_hourly ##
     mp_hourly=readtable(string("./data/daminst-", ssid,"/mp_hourly.csv"))           # the different bid curves associated to a MP bid
-    nrows_mpHourly = size(mp_hourly, 1)
+    #nrows_mpHourly = size(mp_hourly, 1)
     minPH = minimum(mp_hourly[2])
     maxPH = maximum(mp_hourly[2])
     minQH = minimum(mp_hourly[3])
     maxQH = maximum(mp_hourly[3])
-    for k in 1:nrows_mpHourly
+    for k in 1:size(mp_hourly, 1)
         mp_hourly[2][k] = rand(minPH:maxPH)
         mp_hourly[3][k] = rand(minQH:maxQH)
     end
@@ -47,6 +46,21 @@ for j in 1:num_of_files
     #end
 
     line_capacities=readtable(string("./data/daminst-", ssid,"/line_cap.csv"))      # tranmission capacities of lines. as of now, a simple "ATC"
+
+    hourly=readtable(string("./data/daminst-", ssid,"/hourly_quad.csv"))            # classical demand and offer bid curves
+    minPI = minimum(hourly[2])
+    maxPI = maximum(hourly[2])
+    minQI = minimum(hourly[4])
+    maxQI = maximum(hourly[4])
+    for h in 1:size(hourly, 1)
+        randValPI = rand(minPI:maxPI)
+        randValQI = rand(minQI:maxQI)
+        hourly[2][h] = randValPI
+        hourly[3][h] = randValPI
+        hourly[4][h] = randValQI
+    end
+
+
 
     pricecap_up = 3000 # market price range restrictions, upper bound,  current European market rules
     pricecap_down = -500 # market price range restrictions, lower bound, current European market rules (PCR)
