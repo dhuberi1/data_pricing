@@ -17,22 +17,38 @@ prices_severaldays = []
 
 for j in 1:num_of_files
     ssid=j
-    areas=readtable(string("./data/daminst-", ssid,"/areas.csv"))                   # list of bidding zones
-    periods=readtable(string("./data/daminst-", ssid,"/periods.csv"))               # list of periods considered
-    mp_headers=readtable(string("./data/daminst-", ssid,"/mp_headers.csv"))         # MP bids: location, fixed cost, variable cost
+
+    mkdir(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+    areas=readtable(string("./areas.csv"))                                          # list of bidding zones
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable(string("areas.csv"), areas)
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+    periods=readtable(string("./periods.csv"))
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable("periods.csv", periods)
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+    mp_headers=readtable(string("./mp_headers.csv"))
 
     ## Genrating random data for the FC column ##
-    #nrows_mpHeaders = size(mp_headers, 1)                                                             # Number of rows in mp_headers
-    minFC = minimum(mp_headers[3])                                                          # Min value in FC col (lower boundary)
-    maxFC = maximum(mp_headers[3])                                                          # Max value in FC col (upper boundary)
+    minFC = minimum(mp_headers[3])
+    maxFC = maximum(mp_headers[3])
     for k in 1:size(mp_headers, 1)
         mp_headers[3][k] = rand(minFC:maxFC)
-        #print(mp_headers[3][k], " ")
     end
 
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable("mp_headers.csv", mp_headers)
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+
     ## Generating random data for PH/QH pairs in mp_hourly ##
-    mp_hourly=readtable(string("./data/daminst-", ssid,"/mp_hourly.csv"))           # the different bid curves associated to a MP bid
-    #nrows_mpHourly = size(mp_hourly, 1)
+    mp_hourly=readtable(string("./mp_hourly.csv"))
+
     minPH = minimum(mp_hourly[2])
     maxPH = maximum(mp_hourly[2])
     minQH = minimum(mp_hourly[3])
@@ -41,13 +57,20 @@ for j in 1:num_of_files
         mp_hourly[2][k] = rand(minPH:maxPH)
         mp_hourly[3][k] = rand(minQH:maxQH)
     end
-    #if j == 1
-    #    display(mp_hourly)
-    #end
+    mp_hourly[2] = sort(mp_hourly[2])
+    mp_hourly[3] = sort(mp_hourly[3])
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable("mp_hourly.csv", mp_hourly)
 
-    line_capacities=readtable(string("./data/daminst-", ssid,"/line_cap.csv"))      # tranmission capacities of lines. as of now, a simple "ATC"
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+    line_capacities=readtable(string("./line_cap.csv"))
 
-    hourly=readtable(string("./data/daminst-", ssid,"/hourly_quad.csv"))            # classical demand and offer bid curves
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable(string("line_cap.csv"), line_capacities)
+
+    cd(string("/Users/zvihuber/Desktop/Research/data/daminst-", ssid))
+    hourly=readtable(string("./hourly_quad.csv"))            # classical demand and offer bid curves
+
     minPI = minimum(hourly[2])
     maxPI = maximum(hourly[2])
     minQI = minimum(hourly[4])
@@ -60,7 +83,8 @@ for j in 1:num_of_files
         hourly[4][h] = randValQI
     end
 
-
+    cd(string("/Users/zvihuber/Desktop/Research/data/new_data-", ssid))
+    writetable(string("hourly_quad.csv"), hourly)
 
     pricecap_up = 3000 # market price range restrictions, upper bound,  current European market rules
     pricecap_down = -500 # market price range restrictions, lower bound, current European market rules (PCR)
@@ -101,6 +125,7 @@ for j in 1:num_of_files
     prices_severaldays = vcat(prices_severaldays, values(prices).x)
 
 end
+
 prices_severaldays = prices_severaldays'
 #print(prices_severaldays)
 
@@ -114,20 +139,46 @@ for i in 2:2:480
     prices_location12 = vcat(prices_location12, prices_severaldays[i])
 end
 
+# Converting to Array of type float
+prices_location11 = Array{Float64}(prices_location11)
+prices_location12 = Array{Float64}(prices_location12)
+
 length(prices_location11)
 length(prices_location12)
 length(prices_severaldays)
 
 #Calculates Statistics
 function statistics(x)
-    return maximum(Array(x)), minimum(Array(x)), median(Array(x)), mean(Array(x))
+    return maximum(Array(x)), minimum(Array(x)), median(Array(x)), mean(Array(x)), var(Array(x))
 end
 
 #Creates a Dictionary with "max", "min", "median", "mean" as keywords
 function general_stats(y)
-    return Dict("max" => y[1], "min" => y[2], "median" => y[3], "mean" => y[4])
+    return Dict("max" => y[1], "min" => y[2], "median" => y[3], "mean" => y[4], "var" => y[5])
 end
 
 #Dictionary for each location
 general_statistics_11 = general_stats(statistics(prices_location11))
 general_statistics_12 = general_stats(statistics(prices_location12))
+
+# using Plots
+#
+# plot!(
+#     prices_location11,
+#
+#     size=(800, 600),
+#
+#     xticks = 1:240,
+#     yticks = 0:5:200,
+#
+#     ylabel = "Prices",
+#     xlabel = "X Label",
+#
+#     title  = "Location 11",
+#
+#     fillrange = 0,
+#     fillalpha = 0.25,
+#     fillcolor = :lightgoldenrod,
+#
+#     background_color = :ivory
+# )
